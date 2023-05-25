@@ -2,14 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *create_buffer(void);
-void close_file_descriptor(int fd);
+char *create_buffer(char *file);
+void close_file(int fd);
 
 /**
- * create_buffer - Allocates 1024 bytes of memory for a buffer.
- * Return: A pointer to the newly allocated buffer.
+ * create_buffer - it allocates 1024 bytes for a buffer.
+ * @file: argument
+ * Return: A pointer to the newly-allocated buffer.
  */
-char *create_buffer(void)
+char *create_buffer(char *file)
 {
 	char *buffer;
 
@@ -18,7 +19,7 @@ char *create_buffer(void)
 	if (buffer == NULL)
 	{
 		dprintf(STDERR_FILENO,
-			"Error: Unable to allocate memory for the buffer\n");
+			"Error: Can't write to %s\n", file);
 		exit(99);
 	}
 
@@ -26,37 +27,36 @@ char *create_buffer(void)
 }
 
 /**
- * close_file_descriptor - Closes the file descriptor.
- * @fd: The file descriptor to close.
+ * close_file - it closes file descriptors.
+ * @fd: argument
  */
-void close_file_descriptor(int fd)
+void close_file(int fd)
 {
-	int result;
+	int c;
 
-	result = close(fd);
+	c = close(fd);
 
-	if (result == -1)
+	if (c == -1)
 	{
-		dprintf(STDERR_FILENO, "Error: Unable to close file descriptor %d\n", fd);
+		dprintf(STDERR_FILENO, "Error: Can't close fd %d\n", fd);
 		exit(100);
 	}
 }
 
 /**
- * main - The entry point of the program.
- * @argc: The argument count.
- * @argv: The argument vector.
+ * main - enters the code
+ * @argc: argument count
+ * @argv: argument vector
  * Return: 0 on success.
  *
- * Description: Exit codes:
- * - 97: Incorrect argument count.
- * - 98: Unable to read from file_from.
- * - 99: Unable to create or write to file_to.
- * - 100: Unable to close file_to or file_from.
+ * Description: exit code 97 If the argument count is incorrect
+ * exit code 98 if file_from does not exist or cannot be read
+ * exit code 99 if file_to cannot be created or written to - exit code 99.
+ * exit code 100 if file_to or file_from cannot be closed
  */
 int main(int argc, char *argv[])
 {
-	int source_file, destination_file, read_bytes, write_bytes;
+	int from, to, r, w;
 	char *buffer;
 
 	if (argc != 3)
@@ -65,37 +65,51 @@ int main(int argc, char *argv[])
 		exit(97);
 	}
 
-	buffer = create_buffer();
-	source_file = open(argv[1], O_RDONLY);
-	read_bytes = read(source_file, buffer, 1024);
-	destination_file = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0664);
+	buffer = create_buffer(argv[2]);
+	from = open(argv[1], O_RDONLY);
+	r = read(from, buffer, 1024);
+	to = open(argv[2], O_CREAT | O_WRONLY | O_TRUNC, 0664);
 
 	do {
-		if (source_file == -1 || read_bytes == -1)
+		if (from == -1 || r == -1)
 		{
 			dprintf(STDERR_FILENO,
-				"Error: Unable to read from file %s\n", argv[1]);
+				"Error: Can't read from file %s\n", argv[1]);
 			free(buffer);
 			exit(98);
 		}
 
-		write_bytes = write(destination_file, buffer, read_bytes);
-		if (destination_file == -1 || write_bytes == -1)
+		w = write(to, buffer, r);
+		if (to == -1 || w == -1)
 		{
 			dprintf(STDERR_FILENO,
-				"Error: Unable to write to file %s\n", argv[2]);
+				"Error: Can't write to %s\n", argv[2]);
 			free(buffer);
 			exit(99);
 		}
 
-		read_bytes = read(source_file, buffer, 1024);
-		destination_file = open(argv[2], O_WRONLY | O_APPEND);
+		r = read(from, buffer, 1024);
+		to = open(argv[2], O_WRONLY | O_APPEND);
 
-	} while (read_bytes > 0);
+	} while (r > 0);
 
 	free(buffer);
-	close_file_descriptor(source_file);
-	close_file_descriptor(destination_file);
+	close_file(from);
+	close_file(to);
 
 	return (0);
+}
+
+/**
+ * perform_calculation - Performs a mathematical calculation on two numbers.
+ * @num1: The first number.
+ * @num2: The second number.
+ * Return: The result of the calculation.
+ */
+int perform_calculation(int num1, int num2)
+{
+	/* Example calculation: Addition */
+	int result = num1 + num2;
+
+	return (result);
 }
